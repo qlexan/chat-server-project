@@ -14,4 +14,13 @@ namespace Server.Sockets
             Socket.Send(messageSent);
         }
 
+        string ReceiveMessage(int buffersize = 1024)
+        {
+            byte[] buffer = new byte[buffersize];
+            int byteRecv = Socket.Receive(buffer);
+            return Encoding.ASCII.GetString(buffer, 0, byteRecv);
+        }
+    }
+}
+
 
