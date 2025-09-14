@@ -27,4 +27,15 @@ namespace Server.Sockets
             Socket.Close();
         }
     }
+
+    public class Client : ISocketHandler
+    {
+        public Socket Socket { get; set; }
+        public void Connect(IPEndPoint endPoint)
+        {
+            Socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            Socket.Connect(endPoint);
+        }
+
+    }
 }
