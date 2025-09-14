@@ -20,7 +20,11 @@ namespace Server.Sockets
             int byteRecv = Socket.Receive(buffer);
             return Encoding.ASCII.GetString(buffer, 0, byteRecv);
         }
+
+        void Close()
+        {
+            Socket.Shutdown(SocketShutdown.Both);
+            Socket.Close();
+        }
     }
 }
-
-
