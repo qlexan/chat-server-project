@@ -38,4 +38,23 @@ namespace Server.Sockets
         }
 
     }
+    public class Server : ISocketHandler
+    {
+        public Socket Socket { get; set; }
+
+        public void BindAndListen(IPEndPoint endpoint)
+        {
+            Socket = new Socket(endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            Socket.Bind(endpoint);
+            Socket.Listen(10);
+            Console.WriteLine("[SERVER] Successfully binded");
+        }
+
+        public Socket Accept()
+        {
+            return Socket.Accept();
+        }
+
+
+    }
 }
