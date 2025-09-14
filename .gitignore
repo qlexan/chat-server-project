@@ -1,0 +1,18 @@
+# Build results
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.cache
+
+# Logs
+*.log
+
+# Rider
+.idea/
+
+# Mac/Unix
+.DS_Store
