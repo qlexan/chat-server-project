@@ -8,16 +8,18 @@ namespace SocketLib
     {
         Socket Socket { get; set; }
 
-        void SendMessage(string message)
+        void SendMessage(string message, Socket socket = null)
         {
+            var sock = socket ?? Socket;
             byte[] messageSent = Encoding.ASCII.GetBytes(message);
-            Socket.Send(messageSent);
+            sock.Send(messageSent);
         }
 
-        string ReceiveMessage(int buffersize = 1024)
+        string ReceiveMessage(int buffersize = 1024, Socket socket = null)
         {
+            var sock = socket ?? Socket;
             byte[] buffer = new byte[buffersize];
-            int byteRecv = Socket.Receive(buffer);
+            int byteRecv = sock.Receive(buffer);
             return Encoding.ASCII.GetString(buffer, 0, byteRecv);
         }
 
