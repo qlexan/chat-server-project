@@ -9,27 +9,35 @@ namespace SocketLib
         Socket Socket { get; set; }
 
         void SendMessage(string message, Socket socket = null)
+    public class SocketHelper
+    {
+        public void SendMessage(ISocketHandler handler, string message)
         {
-            var sock = socket ?? Socket;
-            byte[] messageSent = Encoding.ASCII.GetBytes(message);
-            sock.Send(messageSent);
+            if (handler == null)
+            {
+                System.Console.WriteLine("Target is null");
+            }
+            else
+            {
+                byte[] messageSent = Encoding.ASCII.GetBytes(message);
+                handler.Socket.Send(messageSent);
+            }
+
         }
 
-        string ReceiveMessage(int buffersize = 1024, Socket socket = null)
+        public string ReceiveMessage(ISocketHandler handler, int buffersize = 1024)
         {
-            var sock = socket ?? Socket;
+
             byte[] buffer = new byte[buffersize];
-            int byteRecv = sock.Receive(buffer);
+            int byteRecv = handler.Socket.Receive(buffer);
             return Encoding.ASCII.GetString(buffer, 0, byteRecv);
         }
-
-        void Close()
+        public void Close(ISocketHandler handler)
         {
-            Socket.Shutdown(SocketShutdown.Both);
-            Socket.Close();
+            handler.Socket.Shutdown(SocketShutdown.Both);
+            handler.Socket.Close();
         }
     }
-
     public class Client : ISocketHandler
     {
         public Socket Socket { get; set; }
