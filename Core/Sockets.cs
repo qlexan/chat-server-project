@@ -41,11 +41,23 @@ namespace SocketLib
     public class Client : ISocketHandler
     {
         public Socket Socket { get; set; }
-        public void Connect(IPEndPoint endPoint)
+        private readonly SocketHelper _helper;
+        public Client(SocketHelper helper)
         {
-            Socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            Socket.Connect(endPoint);
+            _helper = helper;
         }
+        public void Connect(IPEndPoint endPoint, Socket? socket = null)
+        {
+            var sock = socket ?? Socket;
+            sock.Connect(endPoint);
+        }
+
+        public void SendMessage(string message, ISocketHandler? handler = null)
+        {
+            _helper.SendMessage(handler ?? this, message);
+        }
+        public string ReceiveMessage(int buffersize = 1024, Socket? socket = null) => _helper.ReceiveMessage(this, buffersize);
+        public void Close() => _helper.Close(this);
 
     }
     public class Server : ISocketHandler
