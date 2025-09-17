@@ -8,7 +8,11 @@ namespace SocketLib
     {
         Socket Socket { get; set; }
 
-        void SendMessage(string message, Socket socket = null)
+        void SendMessage(string message, ISocketHandler? handler = null);
+        string ReceiveMessage(int buffersize = 1024, Socket? socket = null);
+        void Connect(IPEndPoint ipendpoint, Socket? socket = null);
+        void Close();
+    }
     public class SocketHelper
     {
         public void SendMessage(ISocketHandler handler, string message)
