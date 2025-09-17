@@ -102,12 +102,30 @@ namespace SocketLib
 
     }
 }
+namespace FacadeLib
+{
+    class SocketManager
+    {
+        protected Client _client;
+        protected Server _server;
 
-        public Socket Accept()
+        public SocketManager(Client client, Server server)
         {
-            return Socket.Accept();
+            this._client = client;
+            this._server = server;
         }
+        // Client functions
+        public void ClientConnect(IPEndPoint endpoint) => _client.Connect(endpoint);
+        public void ClientSend(string message) => _client.SendMessage(message);
+        public string ClientReceive() => _client.ReceiveMessage();
+        public void ClientClose() => _client.Close();
 
+        // Server functions
 
+        public void ServerConnect(IPEndPoint endpoint) => _server.Connect(endpoint);
+        public ISocketHandler ServerAccept() => _server.Accept();
+        public void ServerSend(ISocketHandler handler, string message) => _server.SendMessage(message, handler);
+        public string ServerReceive() => _server.ReceiveMessage();
+        public void ServerClose() => _server.Close();
     }
 }
