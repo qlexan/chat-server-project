@@ -66,15 +66,42 @@ namespace SocketLib
     }
     public class Server : ISocketHandler
     {
+        private List<Client> _connectedClients = [];
         public Socket Socket { get; set; }
+        private readonly SocketHelper _helper;
 
-        public void BindAndListen(IPEndPoint endpoint)
+        public Server(SocketHelper helper)
         {
-            Socket = new Socket(endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            Socket.Bind(endpoint);
-            Socket.Listen(10);
+            _helper = helper;
+        }
+
+        public void Connect(IPEndPoint endpoint, Socket? socket = null)
+        {
+            var sock = socket ?? Socket;
+            sock.Bind(endpoint);
+            sock.Listen(10);
             Console.WriteLine("[SERVER] Successfully binded");
         }
+        public List<Client> GetConnectedClients()
+        {
+            return _connectedClients;
+        }
+        public Client Accept()
+        {
+            Socket acceptedSocket = Socket.Accept();
+            Client client = new Client(_helper) { Socket = acceptedSocket };
+            _connectedClients.Add(client); // store it internally
+            return client;
+        }
+
+        public void SendMessage(string message, ISocketHandler? handler = null) => _helper.SendMessage(handler, message);
+        public string ReceiveMessage(int buffersize = 1024, Socket? socket = null) => _helper.ReceiveMessage(this, buffersize);
+        public void Close() => _helper.Close(this);
+
+
+
+    }
+}
 
         public Socket Accept()
         {
