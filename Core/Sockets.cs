@@ -1,82 +1,92 @@
 using System.Net.Sockets;
 using System.Net;
 using System.Text;
-using SocketLib;
+
 
 namespace SocketLib
 {
-    public interface ISocketHandler
+    public interface INetworkHandler 
     {
-        Socket Socket { get; set; }
-
-        void SendMessage(string message, ISocketHandler? handler = null);
-        string ReceiveMessage(int buffersize = 1024, Socket? socket = null);
-        void Connect(IPEndPoint ipendpoint, Socket? socket = null);
+        Task SendMessage(string message, INetworkHandler? handler = null);
+        Task<string> ReceiveMessage(int buffersize = 1024, Socket? socket = null);
         void Close();
     }
-    public class SocketHelper
+
+    public interface IClientHandler : INetworkHandler 
     {
-        public void SendMessage(ISocketHandler handler, string message)
+      TcpClient Connection {get;} 
+
+      Task Connect(IPEndPoint ipendpoint, Socket? socket = null);
+    }
+    public interface IServerHandler : INetworkHandler {
+      Task<TcpClient> AcceptClientAsync();
+
+    }
+    public class NetworkHelper
+    {
+        public async Task SendMessage(INetworkHandler handler, string message)
         {
             if (handler == null)
             {
-                System.Console.WriteLine("Target is null");
+                Console.WriteLine("Target is null");
             }
             else
             {
                 byte[] messageSent = Encoding.ASCII.GetBytes(message);
-                handler.Socket.Send(messageSent);
+                await handler.Socket.SendAsync(messageSent);
             }
 
         }
 
-        public string ReceiveMessage(ISocketHandler handler, int buffersize = 1024)
+        public async Task<string> ReceiveMessage(INetworkHandler handler, int buffersize = 1024)
         {
 
             byte[] buffer = new byte[buffersize];
-            int byteRecv = handler.Socket.Receive(buffer);
+            int byteRecv = await handler.Socket.ReceiveAsync(buffer);
             return Encoding.ASCII.GetString(buffer, 0, byteRecv);
         }
-        public void Close(ISocketHandler handler)
+        public void Close(INetworkHandler handler)
         {
             handler.Socket.Shutdown(SocketShutdown.Both);
             handler.Socket.Close();
         }
     }
-    public class Client : ISocketHandler
+    public class Client : INetworkHandler
     {
-        public Socket Socket { get; set; }
-        private readonly SocketHelper _helper;
-        public Client(SocketHelper helper)
+        private readonly TcpClient _client;
+        private readonly NetworkHelper _helper;
+        public Client(NetworkHelper helper)
         {
             _helper = helper;
+            _client = new TcpClient();
         }
-        public void Connect(IPEndPoint endPoint, Socket? socket = null)
+        public async Task Connect(IPEndPoint endPoint, Socket? socket = null)
         {
-            var sock = socket ?? Socket;
-            sock.Connect(endPoint);
+          await _client.ConnectAsync(endPoint);
         }
 
-        public void SendMessage(string message, ISocketHandler? handler = null)
+        public async Task SendMessage(string message, INetworkHandler? handler = null)
         {
-            _helper.SendMessage(handler ?? this, message);
+            await _helper.SendMessage(handler ?? this, message);
         }
-        public string ReceiveMessage(int buffersize = 1024, Socket? socket = null) => _helper.ReceiveMessage(this, buffersize);
+        public Task<string> ReceiveMessage(int buffersize = 1024, Socket? socket = null) => _helper.ReceiveMessage(this, buffersize);
         public void Close() => _helper.Close(this);
+        
+        public TcpClient Connection  => _client;
 
     }
-    public class Server : ISocketHandler
+    public class Server : INetworkHandler
     {
         private List<Client> _connectedClients = [];
-        public Socket Socket { get; set; }
-        private readonly SocketHelper _helper;
+        public Socket Socket { get; set; } = null!;
+        private readonly NetworkHelper _helper;
 
-        public Server(SocketHelper helper)
+        public Server(NetworkHelper helper)
         {
-            _helper = helper;
+          _helper = helper;
         }
 
-        public void Connect(IPEndPoint endpoint, Socket? socket = null)
+        public async Task Connect(IPEndPoint endpoint, Socket? socket = null)
         {
             var sock = socket ?? Socket;
             sock.Bind(endpoint);
@@ -87,46 +97,19 @@ namespace SocketLib
         {
             return _connectedClients;
         }
-        public Client Accept()
+        public void Accept()
         {
             Socket acceptedSocket = Socket.Accept();
             Client client = new Client(_helper) { Socket = acceptedSocket };
             _connectedClients.Add(client); // store it internally
-            return client;
         }
 
-        public void SendMessage(string message, ISocketHandler? handler = null) => _helper.SendMessage(handler, message);
-        public string ReceiveMessage(int buffersize = 1024, Socket? socket = null) => _helper.ReceiveMessage(this, buffersize);
+        public Task SendMessage(string message, INetworkHandler? handler = null) => _helper.SendMessage(handler, message);
+        public Task<string> ReceiveMessage(int buffersize = 1024, Socket? socket = null) => _helper.ReceiveMessage(this, buffersize);
         public void Close() => _helper.Close(this);
 
 
 
     }
 }
-namespace FacadeLib
-{
-    class SocketManager
-    {
-        protected Client _client;
-        protected Server _server;
 
-        public SocketManager(Client client, Server server)
-        {
-            this._client = client;
-            this._server = server;
-        }
-        // Client functions
-        public void ClientConnect(IPEndPoint endpoint) => _client.Connect(endpoint);
-        public void ClientSend(string message) => _client.SendMessage(message);
-        public string ClientReceive() => _client.ReceiveMessage();
-        public void ClientClose() => _client.Close();
-
-        // Server functions
-
-        public void ServerConnect(IPEndPoint endpoint) => _server.Connect(endpoint);
-        public ISocketHandler ServerAccept() => _server.Accept();
-        public void ServerSend(ISocketHandler handler, string message) => _server.SendMessage(message, handler);
-        public string ServerReceive() => _server.ReceiveMessage();
-        public void ServerClose() => _server.Close();
-    }
-}
